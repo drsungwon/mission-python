@@ -1,5 +1,10 @@
 # 🐍 Python Mission Framework
 
+![alt text](https://img.shields.io/badge/python-3.x-blue.svg)
+![alt text](https://img.shields.io/pypi/v/requests.svg)
+![alt text](https://img.shields.io/badge/tested%20with-pytest-00C782.svg)
+![alt text](https://img.shields.io/badge/license-MIT-blue.svg)
+
 **과제 수행 및 개발 과정 자동 추적을 위한 파이썬 프로젝트 환경** <br>
 *An automated Python project environment for assignments and development process tracking.*
 
