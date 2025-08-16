@@ -147,6 +147,10 @@ def log_code_changes(target_file: str, project_root: str) -> bool:
         # 안전장치: 파일 읽기에 실패했다면, 즉시 False를 반환하여 로깅을 중단합니다.
         if current_content_str is None: return False
         
+        # [수정 사항] Pylance에게 이 변수가 str임을 명확히 알려줍니다.
+        # 또한, 만약의 경우 bytes가 들어오면 즉시 오류를 발생시키는 안전장치 역할도 합니다.
+        assert isinstance(current_content_str, str)
+        
         # 파일 내용을 줄바꿈 단위로 나누어 리스트로 만듭니다.
         # keepends=True 옵션은 각 줄의 끝에 있는 줄바꿈 문자(\n)를 그대로 유지해줍니다.
         # 이는 difflib이 변경사항을 정확하게 비교하는 데 매우 중요합니다.
@@ -182,6 +186,10 @@ def log_code_changes(target_file: str, project_root: str) -> bool:
             # 이전 버전의 내용이 담긴 백업 파일을 읽어옵니다.
             backup_content_str = read_file_content(backup_file)
             if backup_content_str is None: return False
+
+            # [수정 사항] backup_content_str에 대해서도 동일하게 처리합니다.
+            assert isinstance(backup_content_str, str)
+            
             backup_content_lines = backup_content_str.splitlines(keepends=True)
             
             # 최적화: 만약 이전 버전과 현재 버전의 내용이 완전히 같다면, 아무 작업도 하지 않고 성공(True)을 반환합니다.
