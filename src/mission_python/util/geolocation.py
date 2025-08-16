@@ -224,15 +224,25 @@ def create_signature_if_not_exists():
         print(f"🚫 [Geolocation] Signature 파일 생성 중 심각한 오류 발생: {e}", file=sys.stderr)
         return False
 
-# ---------------------------------------------------
-# 이 파일을 직접 실행했을 때만 동작하는 테스트 코드
-# ---------------------------------------------------
+# ----------------------------------------------------------------------------------
+#  메인(main) 코드 블록: 이 프로그램이 시작되는 지점입니다.
+# `if __name__ == "__main__":` 은 이 파이썬 파일을 직접 실행했을 때만
+# 아래 코드를 동작시키라는 특별한 의미를 가지고 있어요.
+#
+# 실행 방법:
+#  1. 프로젝트 root 폴더에서 poetry install 명령을 실행합니다.
+#  2. Visual Code의 인터프리터 선택에서, 프로젝트 인터프리터에 해당하는 항목을 선택합니다.
+#  3. Terminal 사용시 프로젝트 root 폴더에서 다음 명령을 중 하나를 수형합니다. 
+#     - poetry run python src/mission_python/util/geolocation.py
+#     - poetry run python -m mission_python.util.geolocation
+# ----------------------------------------------------------------------------------
+
 if __name__ == "__main__":
     print("geolocation.py 모듈을 직접 실행하여 테스트합니다...")
     
     _current_dir = os.path.dirname(os.path.abspath(__file__))
     _project_root = os.path.dirname(_current_dir)
-    _test_signature_file = os.path.join(_project_root, 'log', 'signature.json.encrypted')
+    _test_signature_file = os.path.join(_project_root, 'log', 'signature.encrypted')
 
     try:
         os.remove(_test_signature_file)
