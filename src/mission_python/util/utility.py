@@ -14,6 +14,9 @@ from datetime import datetime
 from typing import List, Optional, Union
 from functools import wraps
 
+# 개발 중 평문 로그 확인을 위한 플래그 (True: log.plain 생성, False: log.encrypted 생성)
+flag_plain_log_enabled = False
+
 # '.crypto'는 현재 패키지 내의 crypto 모듈을 가져오는 상대 경로 임포트 방식입니다.
 from . import crypto
 
@@ -108,7 +111,7 @@ def commit_changes():
             
         # 모든 작업이 성공적으로 끝나면, 현재 시간을 포함한 성공 메시지를 출력합니다.
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"\n🦊 Code changes successfully encrypted and logged at {timestamp} ...")
+        print(f"\n🦊 Code changes successfully logged at {timestamp} ...")
 
     # 이 함수 내에서 발생하는 모든 예외(오류)를 최종적으로 처리합니다.
     except Exception as e:
@@ -128,6 +131,8 @@ def log_code_changes(target_file: str, project_root: str) -> bool:
         log_dir = os.path.join(project_root, 'log')
         # 암호화된 변경 이력이 누적될 최종 로그 파일입니다.
         encrypted_log_file = os.path.join(log_dir, 'log.encrypted')
+        # flag_plain_log_enabled가 True일 때, 암호화되지 않은 평문 로그를 저장할 파일입니다.
+        plain_log_file = os.path.join(log_dir, 'log.plain')
         # 현재 버전의 main.py와 비교하기 위한 직전 버전의 원본(평문)을 저장하는 임시 파일입니다.
         backup_file = os.path.join(log_dir, 'log.temp') 
         
@@ -157,13 +162,20 @@ def log_code_changes(target_file: str, project_root: str) -> bool:
                 f"🦊=== Initial version of {os.path.basename(target_file)} ===\n\n"
                 f"{current_content_str}"
             )
-            # 로그 내용을 암호화하기 전에 반드시 바이트(bytes) 형태로 인코딩해야 합니다.
-            encrypted_entry = crypto.encrypt_data(log_entry_text.encode('utf-8'))
-            # 암호화 실패 시, 로깅을 중단합니다.
-            if encrypted_entry is None: return False
-            
-            # 암호화된 내용을 로그 파일에 바이너리 쓰기('wb') 모드로 저장합니다.
-            write_file_content(encrypted_log_file, encrypted_entry, 'wb')
+
+            if flag_plain_log_enabled:
+                # 평문 로그 플래그가 True이면, 암호화하지 않고 log.plain 파일에 텍스트 쓰기('w') 모드로 저장합니다.
+                write_file_content(plain_log_file, log_entry_text, 'w')
+            else:
+                # 평문 로그 플래그가 False이면, 기존 방식대로 암호화하여 로그를 기록합니다.
+                # 로그 내용을 암호화하기 전에 반드시 바이트(bytes) 형태로 인코딩해야 합니다.
+                encrypted_entry = crypto.encrypt_data(log_entry_text.encode('utf-8'))
+                # 암호화 실패 시, 로깅을 중단합니다.
+                if encrypted_entry is None: return False
+                
+                # 암호화된 내용을 로그 파일에 바이너리 쓰기('wb') 모드로 저장합니다.
+                write_file_content(encrypted_log_file, encrypted_entry, 'wb')
+
             # 다음 비교를 위해 현재 파일 내용을 백업 파일에 원본 그대로 저장합니다.
             write_file_content(backup_file, current_content_str, 'w')
         else: # 첫 커밋이 아닌 경우 (백업 파일이 존재하는 경우)
@@ -191,17 +203,29 @@ def log_code_changes(target_file: str, project_root: str) -> bool:
             
             # 변경사항이 실제로 존재할 경우에만 로그를 기록합니다.
             if diff:
+                # [안정성 강화]
+                # diff 리스트의 각 항목(라인)에서 혹시 모를 기존 줄바꿈 문자를 모두 제거한 후,
+                # 파이썬의 표준 줄바꿈(\n)으로 다시 합쳐서 한 줄로 붙는 현상을 원천 차단합니다.
+                diff_content = "\n".join(line.rstrip('\r\n') for line in diff)
+
                 # 변경사항(diff)을 포함한 로그 엔트리를 구성합니다.
                 log_entry_text = (
                     f"\n\n🦊=== Code changes at {timestamp} ===\n"
-                    f"{''.join(diff)}"
+                    f"{diff_content}"
                 )
-                # 암호화를 위해 인코딩 후 암호화 함수를 호출합니다.
-                encrypted_entry = crypto.encrypt_data(log_entry_text.encode('utf-8'))
-                if encrypted_entry is None: return False
                 
-                # 기존 로그 파일에 이어서 새로운 내용을 추가하기 위해 바이너리 추가('ab') 모드를 사용합니다.
-                write_file_content(encrypted_log_file, encrypted_entry, 'ab')
+                if flag_plain_log_enabled:
+                    # 평문 로그 플래그가 True이면, 암호화하지 않고 log.plain 파일에 텍스트 추가('a') 모드를 사용합니다.
+                    write_file_content(plain_log_file, log_entry_text, 'a')
+                else:
+                    # 평문 로그 플래그가 False이면, 기존 방식대로 암호화하여 로그를 기록합니다.
+                    # 암호화를 위해 인코딩 후 암호화 함수를 호출합니다.
+                    encrypted_entry = crypto.encrypt_data(log_entry_text.encode('utf-8'))
+                    if encrypted_entry is None: return False
+                    
+                    # 기존 로그 파일에 이어서 새로운 내용을 추가하기 위해 바이너리 추가('ab') 모드를 사용합니다.
+                    write_file_content(encrypted_log_file, encrypted_entry, 'ab')
+
                 # 다음 커밋을 위해, 백업 파일을 현재 파일 내용으로 덮어쓰기('w')하여 업데이트합니다.
                 write_file_content(backup_file, current_content_str, 'w')
                 
