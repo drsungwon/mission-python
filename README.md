@@ -1,6 +1,8 @@
 # 🐍 Python Mission Framework
 
-![alt text](https://img.shields.io/badge/python-3.x-blue.svg)
+![alt text](https://img.shields.io/badge/python-3.9+-blue.svg)
+![alt text](https://img.shields.io/badge/managed%20with-Poetry-blueviolet.svg)
+![alt text](https://img.shields.io/pypi/v/cryptography.svg)
 ![alt text](https://img.shields.io/pypi/v/requests.svg)
 ![alt text](https://img.shields.io/badge/tested%20with-pytest-00C782.svg)
 ![alt text](https://img.shields.io/badge/license-MIT-blue.svg)
